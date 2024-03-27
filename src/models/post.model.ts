@@ -15,23 +15,14 @@ const postSchema = new Schema<IPost>(
 		},
 		image: {
 			type: String,
-			required: [true, "Post image is required!!"],
 			trim: true,
 		},
 		authorId: {
 			type: Schema.Types.ObjectId,
 			ref: "User",
 		},
-		price: {
-			type: Number,
-			required: [true, "Price is required!!"],
-			trim: true,
-		},
-		quantity: {
-			type: Number,
-			required: [true, "Quantity is required!!"],
-			trim: true,
-		},
+		likes: [{ type: Schema.Types.ObjectId, ref: "User" }],
+		comments: [{ type: Schema.Types.ObjectId, ref: "Comment" }],
 	},
 	{
 		timestamps: true,
