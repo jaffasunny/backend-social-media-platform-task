@@ -6,6 +6,7 @@ import {
 	updatePost,
 	getSinglePost,
 	likePost,
+	commentPost,
 } from "../controllers/post.controller";
 import { authMiddleware, roleCheck } from "../middlewares/auth.middleware";
 
@@ -26,5 +27,10 @@ router
 router
 	.route("/:postId/like")
 	.patch(authMiddleware, roleCheck("author"), likePost);
+
+// comment on post
+router
+	.route("/:postId/comment")
+	.patch(authMiddleware, roleCheck("author"), commentPost);
 
 export default router;

@@ -3,6 +3,7 @@ import { ApiResponse } from "../utils/ApiResponse";
 import { asyncHandler } from "../utils/asyncHandler";
 import { Post } from "../models/post.model";
 import { Request, Response } from "express";
+import { IComment } from "../types/commentTypes";
 
 const getAllPosts = asyncHandler(async (req: Request, res: Response) => {
 	const posts = await Post.find().populate("authorId");
@@ -143,6 +144,36 @@ const likePost = asyncHandler(async (req: Request, res: Response) => {
 		);
 });
 
+const commentPost = asyncHandler(async (req: Request, res: Response) => {
+	const { postId } = req.params;
+	const { content } = req.body;
+	const { _id: authorId } = req.user;
+
+	const post = await Post.findById(postId);
+
+	if (!post) {
+		throw new ApiError(400, "Post not found!");
+	}
+
+	const newComment = {
+		authorId,
+		content,
+	} as IComment;
+
+	post.comments.push(newComment);
+	await post.save();
+
+	return res
+		.status(201)
+		.json(
+			new ApiResponse(
+				200,
+				{ comment: newComment },
+				"Comment added successfully"
+			)
+		);
+});
+
 export {
 	getAllPosts,
 	createSinglePost,
@@ -150,4 +181,5 @@ export {
 	removePost,
 	getSinglePost,
 	likePost,
+	commentPost,
 };
