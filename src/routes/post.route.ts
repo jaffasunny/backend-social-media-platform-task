@@ -5,8 +5,8 @@ import {
 	removePost,
 	updatePost,
 	getSinglePost,
-} from "../controllers/post.controller.js";
-import { authMiddleware, roleCheck } from "../middlewares/auth.middleware.js";
+} from "../controllers/post.controller";
+import { authMiddleware, roleCheck } from "../middlewares/auth.middleware";
 
 const router = Router();
 

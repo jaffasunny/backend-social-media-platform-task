@@ -1,17 +1,30 @@
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { User } from "../models/user.model.js";
-import { ResetPasswordToken } from "../models/resetPasswordToken.model.js";
-import sendEmail from "../utils/sendMail.js";
+import { ApiError } from "../utils/ApiError";
+import { ApiResponse } from "../utils/ApiResponse";
+import { asyncHandler } from "../utils/asyncHandler";
+import { User } from "../models/user.model";
+import { ResetPasswordToken } from "../models/resetPasswordToken.model";
+import sendEmail from "../utils/sendMail";
 import crypto from "crypto";
+import { IUser } from "../types/userTypes";
+import { Request, Response } from "express";
 
 // Generate New Refresh Token and Access Token
-const generateAccessAndRefreshTokens = async (userId) => {
+const generateAccessAndRefreshTokens = async (userId: string) => {
 	try {
 		const user = await User.findById(userId);
+		if (!user) {
+			throw new ApiError(404, "User not found");
+		}
+
 		const accessToken = await user.generateAccessToken();
 		const refreshToken = await user.generateRefreshToken();
+
+		if (!accessToken || !refreshToken) {
+			throw new ApiError(
+				500,
+				"Access token or refresh token generation failed"
+			);
+		}
 
 		user.refreshToken = refreshToken;
 		await user.save({ validateBeforeSave: false });
@@ -26,7 +39,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 };
 
 // Signup
-const registerUser = asyncHandler(async (req, res) => {
+const registerUser = asyncHandler(async (req: Request, res: Response) => {
 	const { firstName, lastName, username, email, password, roles } = req.body;
 
 	if (!firstName || !lastName || !username || !email || !password) {
@@ -62,7 +75,7 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 // Login
-const loginUser = asyncHandler(async (req, res) => {
+const loginUser = asyncHandler(async (req: Request, res: Response) => {
 	const { emailOrUsername, password } = req.body;
 
 	if (!emailOrUsername || !password) {
@@ -72,6 +85,10 @@ const loginUser = asyncHandler(async (req, res) => {
 	const user = await User.findOne({
 		$or: [{ username: emailOrUsername }, { email: emailOrUsername }],
 	});
+
+	if (!user) {
+		throw new ApiError(404, "User not found");
+	}
 
 	// compare password with hashed password
 	// const matched = await bcrypt.compare(password, user.password);
@@ -88,7 +105,7 @@ const loginUser = asyncHandler(async (req, res) => {
 	// const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET_KEY);
 
 	const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
-		user._id
+		user._id.toString()
 	);
 
 	user.refreshTokens.push({ token: refreshToken });
@@ -117,7 +134,7 @@ const loginUser = asyncHandler(async (req, res) => {
 });
 
 // Logout
-const logoutUser = asyncHandler(async (req, res) => {
+const logoutUser = asyncHandler(async (req: Request, res: Response) => {
 	await User.findByIdAndUpdate(
 		req.user._id,
 		{
@@ -141,7 +158,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 });
 
 // User Profile
-const userProfile = asyncHandler(async (req, res) => {
+const userProfile = asyncHandler(async (req: Request, res: Response) => {
 	const { username } = req.user;
 
 	const user = await User.findOne({ username }).select("-password");
@@ -156,7 +173,7 @@ const userProfile = asyncHandler(async (req, res) => {
 });
 
 // Refresh Access Token if access token expires
-const refreshAccessToken = asyncHandler(async (req, res) => {
+const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
 	const incomingRefreshToken =
 		req.cookies.refreshToken || req.body.refreshToken;
 
@@ -166,6 +183,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 	try {
 		const user = await User.findById(req.user._id);
+
+		if (!user) {
+			throw new ApiError(401, `User doesnot exist!`);
+		}
 
 		// 3. Find the specific refresh token in the user's collection:
 
@@ -188,7 +209,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 		};
 
 		const { accessToken, refreshToken: newRefreshToken } =
-			await generateAccessAndRefreshTokens(user._id);
+			await generateAccessAndRefreshTokens(user._id.toString());
 
 		// 6. Add new refresh token to the user's collection:
 		user.refreshTokens.push({ token: newRefreshToken });
@@ -206,39 +227,41 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 					"Access token refreshed successfully!"
 				)
 			);
-	} catch (error) {
-		throw new ApiError(401, error?.message || "Invalid Refresh Token!");
+	} catch (error: any) {
+		throw new ApiError(401, error.message || "Invalid Refresh Token!");
 	}
 });
 
-const sendResetPasswordToken = asyncHandler(async (req, res) => {
-	const { email } = req.body;
+const sendResetPasswordToken = asyncHandler(
+	async (req: Request, res: Response) => {
+		const { email } = req.body;
 
-	const user = await User.findOne({ email });
-	if (!user) {
-		throw new ApiError(400, "User with given email address doesnot exist!");
+		const user = await User.findOne({ email });
+		if (!user) {
+			throw new ApiError(400, "User with given email address doesnot exist!");
+		}
+
+		let token = await ResetPasswordToken.findOne({ userId: user._id });
+
+		if (!token) {
+			token = await new ResetPasswordToken({
+				userId: user._id,
+				token: crypto.randomBytes(32).toString("hex"),
+			}).save();
+		}
+
+		const link = `${process.env.BASE_URL}/reset-password/${user._id}/${token.token}`;
+		await sendEmail(user.email, "Password reset", link);
+
+		return res
+			.status(200)
+			.json(
+				new ApiResponse(200, "Reset password link sent to your email address!")
+			);
 	}
+);
 
-	let token = await ResetPasswordToken.findOne({ userId: user._id });
-
-	if (!token) {
-		token = await new ResetPasswordToken({
-			userId: user._id,
-			token: crypto.randomBytes(32).toString("hex"),
-		}).save();
-	}
-
-	const link = `${process.env.BASE_URL}/reset-password/${user._id}/${token.token}`;
-	await sendEmail(user.email, "Password reset", link);
-
-	return res
-		.status(200)
-		.json(
-			new ApiResponse(200, "Reset password link sent to your email address!")
-		);
-});
-
-const resetPassword = asyncHandler(async (req, res) => {
+const resetPassword = asyncHandler(async (req: Request, res: Response) => {
 	const { userId, token: enteredToken } = req.params;
 	const { password } = req.body;
 

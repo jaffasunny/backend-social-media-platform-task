@@ -1,9 +1,11 @@
+// import { TCorsOptions } from "./types";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { TCorsOptions } from "./types";
 
-const corsOptions = {
-	origin: process.env.CORS_ORIGIN,
+const corsOptions: TCorsOptions = {
+	origin: process.env.CORS_ORIGIN as string,
 	credentials: true,
 };
 
@@ -24,8 +26,8 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 // routes import
-import userRouter from "./routes/user.route.js";
-import postRouter from "./routes/post.route.js";
+import userRouter from "./routes/user.route";
+import postRouter from "./routes/post.route";
 
 // routes declaration
 app.get("/", (req, res) => {

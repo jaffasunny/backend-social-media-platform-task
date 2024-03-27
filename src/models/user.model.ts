@@ -1,9 +1,10 @@
 import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
-import { ApiError } from "../utils/ApiError.js";
+import { ApiError } from "../utils/ApiError";
 import jwt from "jsonwebtoken";
+import { IUser } from "../types/userTypes";
 
-const userSchema = new Schema(
+const userSchema = new Schema<IUser>(
 	{
 		firstName: {
 			type: String,
@@ -18,13 +19,13 @@ const userSchema = new Schema(
 		username: {
 			type: String,
 			required: [true, "Username is required!!"],
-			unique: [true, "Username must be unique!"],
+			unique: true,
 			trim: true,
 		},
 		email: {
 			type: String,
 			required: [true, "Email is required!!"],
-			unique: [true, "Email must be unique!"],
+			unique: true,
 			trim: true,
 		},
 		// hashed and salted password
@@ -113,7 +114,7 @@ const userSchema = new Schema(
 	}
 );
 
-userSchema.pre("save", async function (next) {
+userSchema.pre<IUser>("save", async function (next) {
 	try {
 		const saltRounds = Number(process.env.SALT_ROUNDS) || 10;
 
@@ -128,7 +129,10 @@ userSchema.pre("save", async function (next) {
 	}
 });
 
-userSchema.methods.isPasswordCorrect = async function (password) {
+userSchema.methods.isPasswordCorrect = async function (
+	this: IUser,
+	password: string
+) {
 	return await bcrypt.compare(password, this.password);
 };
 
@@ -141,7 +145,7 @@ userSchema.methods.generateAccessToken = function () {
 			firstName: this.firstName,
 			lastName: this.lastName,
 		},
-		process.env.ACCESS_TOKEN_SECRET,
+		process.env.ACCESS_TOKEN_SECRET as string,
 		{ expiresIn: process.env.ACCESS_TOKEN_EXPIRY }
 	);
 };
@@ -151,9 +155,9 @@ userSchema.methods.generateRefreshToken = function () {
 		{
 			_id: this._id,
 		},
-		process.env.REFRESH_TOKEN_SECRET,
+		process.env.REFRESH_TOKEN_SECRET as string,
 		{ expiresIn: process.env.REFRESH_TOKEN_EXPIRY }
 	);
 };
 
-export const User = mongoose.model("User", userSchema);
+export const User = mongoose.model<IUser>("User", userSchema);

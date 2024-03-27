@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
+import { IPost } from "../types/postTypes";
 
-const postSchema = new Schema(
+const postSchema = new Schema<IPost>(
 	{
 		title: {
 			type: String,
@@ -37,4 +38,4 @@ const postSchema = new Schema(
 	}
 );
 
-export const Post = mongoose.model("Post", postSchema);
+export const Post = mongoose.model<IPost>("Post", postSchema);

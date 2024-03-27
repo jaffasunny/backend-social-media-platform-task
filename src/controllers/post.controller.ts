@@ -1,9 +1,10 @@
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { Post } from "../models/post.model.js";
+import { ApiError } from "../utils/ApiError";
+import { ApiResponse } from "../utils/ApiResponse";
+import { asyncHandler } from "../utils/asyncHandler";
+import { Post } from "../models/post.model";
+import { Request, Response } from "express";
 
-const getAllPosts = asyncHandler(async (req, res) => {
+const getAllPosts = asyncHandler(async (req: Request, res: Response) => {
 	const posts = await Post.find().populate("authorId");
 
 	if (!posts) {
@@ -15,7 +16,7 @@ const getAllPosts = asyncHandler(async (req, res) => {
 		.json(new ApiResponse(200, posts, "Posts successfully fetched!"));
 });
 
-const getSinglePost = asyncHandler(async (req, res) => {
+const getSinglePost = asyncHandler(async (req: Request, res: Response) => {
 	const { id } = req.params;
 
 	const post = await Post.findById(id).populate("authorId");
@@ -29,7 +30,7 @@ const getSinglePost = asyncHandler(async (req, res) => {
 		.json(new ApiResponse(200, post, "Posts successfully fetched!"));
 });
 
-const createSinglePost = asyncHandler(async (req, res) => {
+const createSinglePost = asyncHandler(async (req: Request, res: Response) => {
 	const { title, description, image } = req.body;
 
 	// extracting seller id from authentication middleware
@@ -59,7 +60,7 @@ const createSinglePost = asyncHandler(async (req, res) => {
 		.json(new ApiResponse(200, createdPost, "Post created successfully!"));
 });
 
-const updatePost = asyncHandler(async (req, res) => {
+const updatePost = asyncHandler(async (req: Request, res: Response) => {
 	const { title, authorId, description, image } = req.body;
 	const { id } = req.params;
 
@@ -89,7 +90,7 @@ const updatePost = asyncHandler(async (req, res) => {
 		.json(new ApiResponse(200, updatedPost, "Post updated successfully!"));
 });
 
-const removePost = asyncHandler(async (req, res) => {
+const removePost = asyncHandler(async (req: Request, res: Response) => {
 	const { title, authorId, description, image } = req.body;
 	const { id } = req.params;
 
@@ -99,16 +100,9 @@ const removePost = asyncHandler(async (req, res) => {
 		throw new ApiError(404, "Post doesn't exist!");
 	}
 
-	const deletedPost = await Post.findByIdAndDelete(
-		id,
-		{
-			title,
-			authorId,
-			description,
-			image,
-		},
-		{ runValidators: true }
-	);
+	const deletedPost = await Post.findByIdAndDelete(id, {
+		runValidators: true,
+	});
 
 	if (!deletedPost) {
 		throw new ApiError(500, "Something went wrong while creating post!");

@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
+import { IResetPasswordToken } from "../types";
 
-const resetPasswordTokenSchema = new Schema(
+const resetPasswordTokenSchema = new Schema<IResetPasswordToken>(
 	{
 		userId: {
 			type: Schema.Types.ObjectId,
@@ -17,7 +18,7 @@ const resetPasswordTokenSchema = new Schema(
 	}
 );
 
-export const ResetPasswordToken = mongoose.model(
+export const ResetPasswordToken = mongoose.model<IResetPasswordToken>(
 	"ResetPasswordToken",
 	resetPasswordTokenSchema
 );

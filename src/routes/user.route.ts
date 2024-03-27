@@ -7,12 +7,12 @@ import {
 	resetPassword,
 	sendResetPasswordToken,
 	userProfile,
-} from "./../controllers/user.controller.js";
+} from "../controllers/user.controller";
 import {
 	authMiddleware,
 	roleCheck,
 	verifyRefreshToken,
-} from "../middlewares/auth.middleware.js";
+} from "../middlewares/auth.middleware";
 
 const router = Router();
 
