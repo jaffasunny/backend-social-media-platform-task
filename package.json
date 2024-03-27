@@ -1,7 +1,6 @@
 {
 	"name": "backend-social-media-platform",
 	"version": "1.0.0",
-	"type": "module",
 	"description": "",
 	"main": "dist/index.js",
 	"scripts": {

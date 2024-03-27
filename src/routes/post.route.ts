@@ -5,6 +5,7 @@ import {
 	removePost,
 	updatePost,
 	getSinglePost,
+	likePost,
 } from "../controllers/post.controller";
 import { authMiddleware, roleCheck } from "../middlewares/auth.middleware";
 
@@ -20,5 +21,10 @@ router
 	.get(authMiddleware, getSinglePost)
 	.patch(authMiddleware, roleCheck("author"), updatePost)
 	.delete(authMiddleware, roleCheck("author"), removePost);
+
+// like a post
+router
+	.route("/:postId/like")
+	.patch(authMiddleware, roleCheck("author"), likePost);
 
 export default router;

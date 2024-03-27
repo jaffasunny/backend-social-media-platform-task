@@ -33,13 +33,11 @@ const getSinglePost = asyncHandler(async (req: Request, res: Response) => {
 const createSinglePost = asyncHandler(async (req: Request, res: Response) => {
 	const { title, description, image } = req.body;
 
-	// extracting seller id from authentication middleware
+	// extracting author id from authentication middleware
 	const { _id: authorId } = req.user;
 
-	const posts = await Post.find({ title });
-
-	if (posts.length) {
-		throw new ApiError(404, "Post already exists!");
+	if (!title || !description) {
+		throw new ApiError(400, "Please enterall fields!");
 	}
 
 	const post = await Post.create({
@@ -91,7 +89,6 @@ const updatePost = asyncHandler(async (req: Request, res: Response) => {
 });
 
 const removePost = asyncHandler(async (req: Request, res: Response) => {
-	const { title, authorId, description, image } = req.body;
 	const { id } = req.params;
 
 	const posts = await Post.findById(id);
@@ -113,4 +110,44 @@ const removePost = asyncHandler(async (req: Request, res: Response) => {
 		.json(new ApiResponse(200, deletedPost, "Post deleted successfully!"));
 });
 
-export { getAllPosts, createSinglePost, updatePost, removePost, getSinglePost };
+const likePost = asyncHandler(async (req: Request, res: Response) => {
+	const { postId } = req.params;
+
+	const { _id: authorId } = req.user;
+
+	const post = await Post.findById(postId);
+
+	if (!post) {
+		throw new ApiError(400, "Post not found!");
+	}
+
+	const likedIndex = post.likes.indexOf(authorId);
+
+	if (likedIndex !== -1) {
+		post.likes.splice(likedIndex, 1);
+	} else {
+		post.likes.push(authorId);
+	}
+
+	await post.save();
+
+	return res
+		.status(201)
+		.json(
+			new ApiResponse(
+				200,
+				likedIndex !== -1
+					? "Post unliked successfully"
+					: "Post liked successfully"
+			)
+		);
+});
+
+export {
+	getAllPosts,
+	createSinglePost,
+	updatePost,
+	removePost,
+	getSinglePost,
+	likePost,
+};
