@@ -32,8 +32,14 @@ const postSchema = new Schema<IPost>(
 			trim: true,
 		},
 		image: {
-			type: String,
-			trim: true,
+			public_id: {
+				type: String,
+				required: true,
+			},
+			url: {
+				type: String,
+				required: true,
+			},
 		},
 		authorId: {
 			type: Schema.Types.ObjectId,

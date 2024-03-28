@@ -9,18 +9,19 @@ import {
 	commentPost,
 } from "../controllers/post.controller";
 import { authMiddleware, roleCheck } from "../middlewares/auth.middleware";
+import singleUpload from "../middlewares/multer";
 
 const router = Router();
 
 router
 	.route("/")
 	.get(authMiddleware, getAllPosts)
-	.post(authMiddleware, roleCheck("author"), createSinglePost);
+	.post(authMiddleware, roleCheck("author"), singleUpload, createSinglePost);
 
 router
 	.route("/:id")
 	.get(authMiddleware, getSinglePost)
-	.patch(authMiddleware, roleCheck("author"), updatePost)
+	.patch(authMiddleware, roleCheck("author"), singleUpload, updatePost)
 	.delete(authMiddleware, roleCheck("author"), removePost);
 
 // like a post

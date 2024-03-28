@@ -1,15 +1,22 @@
 import "dotenv/config";
 import connectDB from "./db/index";
 import { app } from "./app";
+import cloudinary from "cloudinary";
 
 const PORT = process.env.PORT || 8000;
 
 connectDB()
-	.then(() =>
+	.then(() => {
+		cloudinary.v2.config({
+			cloud_name: process.env.CLOUDINARY_CLIENT_NAME as string,
+			api_key: process.env.CLOUDINARY_API_KEY as string,
+			api_secret: process.env.CLOUDINARY_API_SECRET as string,
+		});
+
 		app.listen(PORT, () => {
 			console.log(`Server is running at port: ${PORT}`);
-		})
-	)
+		});
+	})
 	.catch((err) => {
 		console.log("MONGO db connection failed !!!", err);
 		throw err;

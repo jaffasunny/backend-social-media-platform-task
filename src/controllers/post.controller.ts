@@ -4,6 +4,9 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { Post } from "../models/post.model";
 import { Request, Response } from "express";
 import { IComment } from "../types/commentTypes";
+import getDataUri, { File } from "../utils/dataUri";
+import cloudinary from "cloudinary";
+import DataURIParser from "datauri/parser";
 
 const getAllPosts = asyncHandler(async (req: Request, res: Response) => {
 	const posts = await Post.find().populate("authorId");
@@ -32,20 +35,40 @@ const getSinglePost = asyncHandler(async (req: Request, res: Response) => {
 });
 
 const createSinglePost = asyncHandler(async (req: Request, res: Response) => {
-	const { title, description, image } = req.body;
+	const { title, description } = req.body;
+
+	const file = req.file;
 
 	// extracting author id from authentication middleware
 	const { _id: authorId } = req.user;
 
 	if (!title || !description) {
-		throw new ApiError(400, "Please enterall fields!");
+		throw new ApiError(400, "Please enter all fields!");
 	}
+
+	// upload image to cloudinary
+	if (!file) {
+		throw new ApiError(400, "Please upload an image!");
+	}
+
+	let fileUri: DataURIParser = getDataUri(file);
+
+	if (!fileUri) {
+		throw new ApiError(500, "Error converting file to data URI");
+	}
+
+	const mycloud = await cloudinary.v2.uploader.upload(
+		fileUri.content as string
+	);
 
 	const post = await Post.create({
 		title,
 		authorId,
 		description,
-		image,
+		image: {
+			public_id: mycloud.public_id,
+			url: mycloud.secure_url,
+		},
 	});
 
 	const createdPost = await Post.findById(post._id);
@@ -60,8 +83,9 @@ const createSinglePost = asyncHandler(async (req: Request, res: Response) => {
 });
 
 const updatePost = asyncHandler(async (req: Request, res: Response) => {
-	const { title, authorId, description, image } = req.body;
+	const { title, authorId, description } = req.body;
 	const { id } = req.params;
+	const file = req.file;
 
 	const posts = await Post.findById(id);
 
@@ -69,13 +93,31 @@ const updatePost = asyncHandler(async (req: Request, res: Response) => {
 		throw new ApiError(404, "Post doesn't exist!");
 	}
 
+	// upload image to cloudinary
+	if (!file) {
+		throw new ApiError(400, "Please upload an image!");
+	}
+
+	let fileUri: DataURIParser = getDataUri(file);
+
+	if (!fileUri) {
+		throw new ApiError(500, "Error converting file to data URI");
+	}
+
+	const mycloud = await cloudinary.v2.uploader.upload(
+		fileUri.content as string
+	);
+
 	const updatedPost = await Post.findByIdAndUpdate(
 		id,
 		{
 			title,
 			authorId,
 			description,
-			image,
+			image: {
+				public_id: mycloud.public_id,
+				url: mycloud.secure_url,
+			},
 		},
 		{ new: true, runValidators: true }
 	);
