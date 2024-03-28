@@ -162,6 +162,8 @@ const likePost = asyncHandler(async (req: Request, res: Response) => {
 
 	const post = await Post.findById(postId);
 
+	console.log({ postId, authorId, post });
+
 	if (!post) {
 		throw new ApiError(400, "Post not found!");
 	}
