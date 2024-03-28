@@ -23,7 +23,9 @@ const getAllPosts = asyncHandler(async (req: Request, res: Response) => {
 const getSinglePost = asyncHandler(async (req: Request, res: Response) => {
 	const { id } = req.params;
 
-	const post = await Post.findById(id).populate("authorId");
+	const post = await Post.findById(id).populate(
+		"authorId likes comments.authorId"
+	);
 
 	if (!post) {
 		throw new ApiError(404, "No such post available!");
