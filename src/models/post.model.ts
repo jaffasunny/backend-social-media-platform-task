@@ -13,6 +13,8 @@ const commentSchema = new Schema<IComment>(
 			required: [true, "Comment content is required!!"],
 			trim: true,
 		},
+		likes: [{ type: Schema.Types.ObjectId, ref: "User" }], // Users who liked the comment
+		replies: [{ type: Schema.Types.ObjectId, ref: "Comment" }],
 	},
 	{
 		timestamps: true,
