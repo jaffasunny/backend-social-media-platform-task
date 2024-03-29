@@ -76,7 +76,8 @@ const registerUser = asyncHandler(async (req: Request, res: Response) => {
 
 // Login
 const loginUser = asyncHandler(async (req: Request, res: Response) => {
-	const { emailOrUsername, password } = req.body;
+	const { emailOrUsername, password, fcmToken } = req.body;
+	console.log({ fcmToken });
 
 	if (!emailOrUsername || !password) {
 		throw new ApiError(400, "Please fill all details!");
@@ -109,6 +110,7 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
 	);
 
 	user.refreshTokens.push({ token: refreshToken });
+	user.fcmToken.push(fcmToken);
 
 	// remove password from response
 	delete user._doc.password;

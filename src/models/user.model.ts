@@ -108,6 +108,7 @@ const userSchema = new Schema<IUser>(
 			default: false,
 		},
 		refreshTokens: [{ token: String }],
+		fcmToken: [{ type: String }],
 	},
 	{
 		timestamps: true,

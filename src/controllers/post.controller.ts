@@ -7,6 +7,9 @@ import { IComment } from "../types/commentTypes";
 import getDataUri, { File } from "../utils/dataUri";
 import cloudinary from "cloudinary";
 import DataURIParser from "datauri/parser";
+import { messaging } from "../firebase";
+import { Notification } from "../models/notification.model";
+import { ObjectId } from "mongoose";
 
 const getAllPosts = asyncHandler(async (req: Request, res: Response) => {
 	const posts = await Post.find().populate("authorId");
@@ -23,9 +26,16 @@ const getAllPosts = asyncHandler(async (req: Request, res: Response) => {
 const getSinglePost = asyncHandler(async (req: Request, res: Response) => {
 	const { id } = req.params;
 
-	const post = await Post.findById(id).populate(
-		"authorId likes comments.authorId"
-	);
+	const post = await Post.findById(id)
+		.populate({
+			path: "authorId",
+			select: "-password", // Exclude password field
+		})
+		.populate({
+			path: "comments.authorId",
+			select: "-password", // Exclude password field
+		})
+		.populate("likes");
 
 	if (!post) {
 		throw new ApiError(404, "No such post available!");
@@ -158,20 +168,70 @@ const removePost = asyncHandler(async (req: Request, res: Response) => {
 const likePost = asyncHandler(async (req: Request, res: Response) => {
 	const { postId } = req.params;
 
-	const { _id: authorId } = req.user;
+	const { _id: user, firstName, lastName } = req.user;
 
-	const post = await Post.findById(postId);
+	const post = await Post.findById(postId).populate({
+		path: "authorId",
+		select: "-password", // Exclude password field
+	});
+
+	const gettingNotifications = await Notification.find({
+		userId: post?.authorId._id,
+	});
+
+	let newNotification = new Notification();
+
+	console.log({ postId, authorId, post });
 
 	if (!post) {
 		throw new ApiError(400, "Post not found!");
 	}
 
-	const likedIndex = post.likes.indexOf(authorId);
+	const likedIndex = post.likes.indexOf(user);
 
 	if (likedIndex !== -1) {
 		post.likes.splice(likedIndex, 1);
 	} else {
-		post.likes.push(authorId);
+		post.likes.push(user);
+
+		if (gettingNotifications.length) {
+			const notificationToUpdate = gettingNotifications[0];
+
+			if (!notificationToUpdate.userId) {
+				notificationToUpdate.userId = post.authorId._id as ObjectId;
+			}
+
+			notificationToUpdate.notifications.push({
+				title: "Received new notification!",
+				body: `${firstName} ${lastName} liked your post`,
+			});
+
+			await notificationToUpdate.save();
+		} else {
+			newNotification.userId = post.authorId._id as ObjectId;
+			newNotification.notifications.push({
+				title: "Received new notification!",
+				body: `${firstName} ${lastName} liked your post`,
+			});
+			await newNotification.save();
+		}
+
+		post.authorId.fcmToken.forEach(async (token) => {
+			await messaging
+				.send({
+					token,
+					notification: {
+						title: "Received new notification!",
+						body: `${firstName} ${lastName} liked your post`,
+					},
+				})
+				.then((response: unknown) => {
+					console.log("Successfully sent message to", token, response);
+				})
+				.catch((error: unknown) => {
+					console.error("Error sending message to", token, error);
+				});
+		});
 	}
 
 	await post.save();
@@ -191,9 +251,12 @@ const likePost = asyncHandler(async (req: Request, res: Response) => {
 const commentPost = asyncHandler(async (req: Request, res: Response) => {
 	const { postId } = req.params;
 	const { content } = req.body;
-	const { _id: authorId } = req.user;
+	const { _id: authorId, firstName, lastName } = req.user;
 
-	const post = await Post.findById(postId);
+	const post = await Post.findById(postId).populate({
+		path: "authorId",
+		select: "-password", // Exclude password field
+	});
 
 	if (!post) {
 		throw new ApiError(400, "Post not found!");
@@ -205,6 +268,24 @@ const commentPost = asyncHandler(async (req: Request, res: Response) => {
 	} as IComment;
 
 	post.comments.push(newComment);
+
+	post.authorId.fcmToken.forEach(async (token) => {
+		messaging
+			.send({
+				token, // Use the current token from the loop
+				notification: {
+					title: "Received new notification!",
+					body: `${firstName} ${lastName} commented on your post`,
+				},
+			})
+			.then((response: unknown) => {
+				console.log("Successfully sent message to", token, response);
+			})
+			.catch((error: unknown) => {
+				console.error("Error sending message to", token, error);
+			});
+	});
+
 	await post.save();
 
 	return res

@@ -2,6 +2,8 @@ import "dotenv/config";
 import connectDB from "./db/index";
 import { app } from "./app";
 import cloudinary from "cloudinary";
+const Bull = require("bull");
+const notificationRemovalQueue = new Bull("notification-removal-queue");
 
 const PORT = process.env.PORT || 8000;
 

@@ -18,6 +18,7 @@ export interface IUser extends IUserDocument {
 	firstName: string;
 	lastName: string;
 	username: string;
+	fcmToken: string[];
 	email: string;
 	password: string;
 	address?: Address;

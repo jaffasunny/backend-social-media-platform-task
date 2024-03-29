@@ -28,6 +28,7 @@ app.use(cookieParser());
 // routes import
 import userRouter from "./routes/user.route";
 import postRouter from "./routes/post.route";
+import notificationRouter from "./routes/notification.route";
 
 // routes declaration
 app.get("/", (req, res) => {
@@ -43,6 +44,9 @@ app.use("/api/v1/users", userRouter);
 
 // posts routes
 app.use("/api/v1/posts", postRouter);
+
+// notifications routes
+app.use("/api/v1/notifications", notificationRouter);
 
 // http://localhost:8000/api/v1/users/register
 
