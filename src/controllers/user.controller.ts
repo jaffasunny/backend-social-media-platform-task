@@ -77,7 +77,6 @@ const registerUser = asyncHandler(async (req: Request, res: Response) => {
 // Login
 const loginUser = asyncHandler(async (req: Request, res: Response) => {
 	const { emailOrUsername, password, fcmToken } = req.body;
-	console.log({ fcmToken });
 
 	if (!emailOrUsername || !password) {
 		throw new ApiError(400, "Please fill all details!");
@@ -137,10 +136,14 @@ const loginUser = asyncHandler(async (req: Request, res: Response) => {
 
 // Logout
 const logoutUser = asyncHandler(async (req: Request, res: Response) => {
+	const { fcmToken } = req.params;
+	const { _id } = req.user;
+
 	await User.findByIdAndUpdate(
-		req.user._id,
+		_id,
 		{
-			$set: { refreshToken: undefined },
+			$set: { refreshTokens: [] },
+			$pull: { fcmToken },
 		},
 		{
 			new: true,
