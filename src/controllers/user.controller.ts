@@ -193,8 +193,6 @@ const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
 			throw new ApiError(401, `User doesnot exist!`);
 		}
 
-		// 3. Find the specific refresh token in the user's collection:
-
 		const matchingRefreshToken = user.refreshTokens.find(
 			(token) => token.token === incomingRefreshToken
 		);
@@ -203,7 +201,6 @@ const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
 			throw new ApiError(401, "Invalid Refresh Token!");
 		}
 
-		// 4. Revoke the used refresh token (optional for enhanced security):
 		user.refreshTokens = user.refreshTokens.filter(
 			(token) => token.token !== incomingRefreshToken
 		);
@@ -216,7 +213,9 @@ const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
 		const { accessToken, refreshToken: newRefreshToken } =
 			await generateAccessAndRefreshTokens(user._id.toString());
 
-		// 6. Add new refresh token to the user's collection:
+		console.log("access token refresh token refreshed");
+
+		// new refreshtoken
 		user.refreshTokens.push({ token: newRefreshToken });
 
 		await user.save({ validateBeforeSave: false });
