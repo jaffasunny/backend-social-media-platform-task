@@ -162,6 +162,33 @@ const logoutUser = asyncHandler(async (req: Request, res: Response) => {
 		.json(new ApiResponse(200, {}, "User logged out successfully!"));
 });
 
+// get all users
+const allUsers = asyncHandler(async (req: Request, res: Response) => {
+	const { _id: userId } = req.user;
+	const keyword = req.query.search
+		? {
+				$or: [
+					{ name: { $regex: req.query.search, $options: "i" } },
+					{ email: { $regex: req.query.search, $options: "i" } },
+				],
+		  }
+		: {};
+	console.log("🚀 ~ allUsers ~ keyword:", keyword);
+
+	const options = {
+		httpOnly: true,
+		secure: true,
+	};
+
+	const users = await User.find(keyword).find({ _id: { $ne: userId } });
+
+	return res
+		.status(200)
+		.clearCookie("accessToken", options)
+		.cookie("refreshToken", options)
+		.json(new ApiResponse(200, { users }, "User logged out successfully!"));
+});
+
 // User Profile
 const userProfile = asyncHandler(async (req: Request, res: Response) => {
 	const { username } = req.user;
@@ -309,4 +336,5 @@ export {
 	refreshAccessToken,
 	sendResetPasswordToken,
 	resetPassword,
+	allUsers,
 };

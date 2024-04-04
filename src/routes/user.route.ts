@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+	allUsers,
 	loginUser,
 	logoutUser,
 	refreshAccessToken,
@@ -31,5 +32,7 @@ router.route("/refreshToken").post(verifyRefreshToken, refreshAccessToken);
 // profile
 router.get("/profile", authMiddleware, roleCheck("author"), userProfile);
 // router.put("/editprofile", authenticate, AuthController.userProfileEdit);
+
+router.route("/").get(authMiddleware, allUsers);
 
 export default router;

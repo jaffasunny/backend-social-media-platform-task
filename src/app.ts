@@ -29,6 +29,7 @@ app.use(cookieParser());
 import userRouter from "./routes/user.route";
 import postRouter from "./routes/post.route";
 import notificationRouter from "./routes/notification.route";
+import chatRouter from "./routes/chat.route";
 
 // routes declaration
 app.get("/", (req, res) => {
@@ -47,6 +48,9 @@ app.use("/api/v1/posts", postRouter);
 
 // notifications routes
 app.use("/api/v1/notifications", notificationRouter);
+
+// chats routes
+app.use("/api/v1/chats", chatRouter);
 
 // http://localhost:8000/api/v1/users/register
 
