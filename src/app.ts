@@ -30,6 +30,7 @@ import userRouter from "./routes/user.route";
 import postRouter from "./routes/post.route";
 import notificationRouter from "./routes/notification.route";
 import chatRouter from "./routes/chat.route";
+import messageRouter from "./routes/message.route";
 
 // routes declaration
 app.get("/", (req, res) => {
@@ -51,6 +52,9 @@ app.use("/api/v1/notifications", notificationRouter);
 
 // chats routes
 app.use("/api/v1/chats", chatRouter);
+
+// chats routes
+app.use("/api/v1/message", messageRouter);
 
 // http://localhost:8000/api/v1/users/register
 

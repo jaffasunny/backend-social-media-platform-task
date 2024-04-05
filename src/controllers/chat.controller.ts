@@ -3,6 +3,7 @@ import { ApiResponse } from "../utils/ApiResponse";
 import { asyncHandler } from "../utils/asyncHandler";
 import { Request, Response } from "express";
 import { Chat } from "../models/chat.model";
+import { User } from "../models/user.model";
 
 const accessChat = asyncHandler(async (req: Request, res: Response) => {
 	const { _id: authorId } = req.user;
@@ -58,11 +59,13 @@ const fetchChat = asyncHandler(async (req: Request, res: Response) => {
 	const userChats = await Chat.find({ users: userId })
 		.populate("users", "-password")
 		.populate("groupAdmin", "-password")
-		.populate("latestMessage", {
-			path: "latestMessage.sender",
-			select: "firstName lastName username email -password",
-		})
+		.populate("latestMessage")
 		.sort({ updatedAt: -1 });
+
+	const _userChats = await User.populate(userChats, {
+		path: "latestMessage.sender",
+		select: "-password",
+	});
 
 	if (!userChats) {
 		throw new ApiError(404, "No user chats available!");
@@ -70,7 +73,7 @@ const fetchChat = asyncHandler(async (req: Request, res: Response) => {
 
 	return res
 		.status(200)
-		.json(new ApiResponse(200, userChats, "User chats successfully fetched!"));
+		.json(new ApiResponse(200, _userChats, "User chats successfully fetched!"));
 });
 
 const createGroupChat = asyncHandler(async (req: Request, res: Response) => {
